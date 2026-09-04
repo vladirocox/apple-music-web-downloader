@@ -344,31 +344,35 @@ export function SettingsPage({ showToast }: Props) {
               style={{ marginLeft: 8 }}
               onClick={() => setShowTokenHelp(!showTokenHelp)}
             >
-              {showTokenHelp ? 'Hide' : 'How to get this?'}
+              {showTokenHelp ? 'Hide' : 'What is this?'}
             </button>
           </div>
+          <p style={{ fontSize: 13, color: 'var(--am-text-secondary)', marginBottom: 12 }}>
+            Usually not needed — the Wrapper extracts this automatically when you log in with your Apple ID.
+            Only paste a token here if the Wrapper can't get one on its own, or you need a token from a different account/region.
+          </p>
           {showTokenHelp && (
             <div style={{
               background: 'var(--am-bg-tertiary)', borderRadius: 8,
               padding: 12, marginBottom: 12, fontSize: 13, lineHeight: 1.6,
             }}>
-              <p><strong>How to obtain your Media User Token:</strong></p>
+              <p><strong>How to obtain your Media User Token (if needed):</strong></p>
               <ol style={{ paddingLeft: 20, marginTop: 8 }}>
                 <li>Open <a href="https://music.apple.com" target="_blank" style={{ color: 'var(--am-red)' }}>music.apple.com</a></li>
                 <li>Open Developer Tools (F12) → Network tab</li>
                 <li>Play any song</li>
                 <li>Look for requests to <code>amp-api.music.apple.com</code></li>
                 <li>Find the <code>Authorization</code> header — the value after "Bearer " is your token</li>
-                <li>Or check the Wrapper logs above — it displays the Music-Token when started</li>
+                <li>Or check the Wrapper logs — it displays the Music-Token when started</li>
               </ol>
             </div>
           )}
           <div className="form-group">
-            <label className="form-label">Media User Token</label>
+            <label className="form-label">Media User Token (optional)</label>
             <input
               className="form-input"
               type="password"
-              placeholder="Paste your media-user-token here"
+              placeholder="Leave empty if Wrapper is working"
               value={config.media_user_token}
               onChange={e => setConfig({ ...config, media_user_token: e.target.value })}
             />
