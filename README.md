@@ -85,8 +85,7 @@ Open **http://localhost:8000** in your browser.
 | Page | Description |
 |------|-------------|
 | **Search** | Search for songs, albums, artists on Apple Music. Click download to save. |
-| **Library** | Browse all downloaded albums and tracks. Click to expand and play. |
-| **Downloads** | View active and completed downloads with real-time progress. |
+| **Library** | Browse all downloaded albums and tracks. Play, download files, or delete from disk. |
 | **Settings** | Configure Wrapper, enter Apple ID, set download options. |
 
 ### Command Line (Advanced)
@@ -94,14 +93,11 @@ Open **http://localhost:8000** in your browser.
 You can also use the Go CLI directly:
 
 ```bash
-# Download a single song
-./bin/amd --alac "https://music.apple.com/us/album/song-name/123456"
+# Download a single song (ALAC is default)
+./bin/amd --song "https://music.apple.com/us/album/song-name/123456"
 
 # Download an entire album
-./bin/amd --alac "https://music.apple.com/us/album/album-name/123456"
-
-# Download a playlist
-./bin/amd --alac "https://music.apple.com/us/playlist/playlist-name/pl.123456"
+./bin/amd "https://music.apple.com/us/album/album-name/123456"
 
 # Search from CLI (interactive)
 ./bin/amd --search song "Artist Name"
@@ -286,6 +282,16 @@ source venv/bin/activate && pip install -r backend/requirements.txt
 ### MP4Box not found
 - The setup script builds it from source automatically
 - Or install manually: `sudo apt install gpac` (if available) or build from [gpac.io](https://gpac.io)
+
+## Known Limitations
+
+- **No music video downloads** — Only audio (ALAC) is supported
+- **No playlist downloads from web UI** — Use the Go CLI directly for playlists
+- **Wrapper must be running** — Downloads fail without the decryption engine
+- **2FA required** — First login needs a 2FA code entered in the web UI
+- **Linux x86_64 only** — Wrapper binary and rootfs are Linux-specific
+- **No Docker** — Wrapper runs natively (Docker approach was abandoned due to `unshare` restrictions)
+- **Lyrics disabled** — Can cause parse errors; disabled in config by default
 
 ## Credits
 
