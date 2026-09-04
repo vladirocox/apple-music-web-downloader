@@ -838,9 +838,9 @@ body {
   }
 
   .page-header {
-    padding: 16px 16px 12px;
-    position: sticky;
-    top: 53px;
+    padding: 12px 16px 10px;
+    background: var(--am-bg-secondary);
+    border-bottom: 1px solid var(--am-border);
   }
 
   .page-body {
