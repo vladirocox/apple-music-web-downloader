@@ -470,8 +470,10 @@ async def get_cover(path: str):
 @app.get("/api/stream")
 async def stream_track(request: Request, path: str):
     p = Path(path)
-    if not p.exists() or not p.parent.parent.parent.is_relative_to(DOWNLOAD_DIR):
+    if not p.exists():
         raise HTTPException(404, "Track not found")
+    if not p.resolve().is_relative_to(DOWNLOAD_DIR.resolve()):
+        raise HTTPException(403, "Access denied")
 
     file_size = p.stat().st_size
     content_type = "audio/mp4"
@@ -533,8 +535,10 @@ async def stream_track(request: Request, path: str):
 @app.get("/api/download-file")
 async def download_file(path: str):
     p = Path(path)
-    if not p.exists() or not p.parent.parent.parent.is_relative_to(DOWNLOAD_DIR):
+    if not p.exists():
         raise HTTPException(404, "File not found")
+    if not p.resolve().is_relative_to(DOWNLOAD_DIR.resolve()):
+        raise HTTPException(403, "Access denied")
     return FileResponse(
         p,
         media_type="application/octet-stream",

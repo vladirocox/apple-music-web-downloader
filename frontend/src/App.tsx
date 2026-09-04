@@ -48,13 +48,6 @@ export default function App() {
             </div>
           ))}
         </nav>
-        <div className="sidebar-divider" />
-        <nav className="sidebar-nav">
-          <div className="sidebar-link" onClick={() => navigate('settings')}>
-            <span>🔑</span>
-            Account
-          </div>
-        </nav>
       </aside>
 
       <main className="main-content">

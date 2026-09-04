@@ -315,9 +315,12 @@ body {
 
 .track-actions {
   display: flex;
-  gap: 4px;
+  gap: 2px;
   opacity: 0;
   transition: opacity 0.15s;
+  flex-shrink: 0;
+  width: 90px;
+  justify-content: flex-end;
 }
 
 .track-item:hover .track-actions {
