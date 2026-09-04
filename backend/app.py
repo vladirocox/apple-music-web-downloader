@@ -37,6 +37,7 @@ TOKEN_CACHE: dict = {"token": None, "expires": 0}
 wrapper_process: Optional[subprocess.Popen] = None
 wrapper_needs_2fa = False
 wrapper_output_log: list[str] = []
+wrapper_apple_id: str = ""
 WRAPPER_LOG_MAX = 500
 
 
@@ -171,6 +172,7 @@ async def get_status():
         "wrapper_running": is_wrapper_running(),
         "wrapper_ready": is_wrapper_ready(),
         "wrapper_needs_2fa": wrapper_needs_2fa,
+        "wrapper_apple_id": wrapper_apple_id,
         "cli_exists": CLI_BIN.exists(),
         "download_dir": str(DOWNLOAD_DIR),
         "config_exists": CONFIG_PATH.exists(),
@@ -227,7 +229,7 @@ async def set_token(model: TokenModel):
 
 @app.post("/api/auth/wrapper")
 async def start_wrapper(auth: AuthModel):
-    global wrapper_process, wrapper_needs_2fa, wrapper_output_log
+    global wrapper_process, wrapper_needs_2fa, wrapper_output_log, wrapper_apple_id
 
     if is_wrapper_running():
         return {"ok": True, "message": "Wrapper already running"}
@@ -240,6 +242,7 @@ async def start_wrapper(auth: AuthModel):
     env = {**os.environ, "LD_LIBRARY_PATH": ld_path}
 
     try:
+        wrapper_apple_id = auth.username
         wrapper_process = subprocess.Popen(
             [str(wrapper_bin), "-L", f"{auth.username}:{auth.password}", "-H", "127.0.0.1"],
             cwd=str(WRAPPER_DIR),

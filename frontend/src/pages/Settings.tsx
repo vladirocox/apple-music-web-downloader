@@ -27,6 +27,7 @@ interface Status {
   wrapper_running: boolean
   wrapper_ready: boolean
   wrapper_needs_2fa: boolean
+  wrapper_apple_id: string
   cli_exists: boolean
   download_dir: string
   config_exists: boolean
@@ -231,6 +232,11 @@ export function SettingsPage({ showToast }: Props) {
             <div>
               CLI: {status.cli_exists ? '✅ Built' : '❌ Not found'}
             </div>
+            {wrapperOk && status.wrapper_apple_id && (
+              <div style={{ fontSize: 13, color: 'var(--am-text-secondary)' }}>
+                Logged in as: <span style={{ color: 'var(--am-text)' }}>{status.wrapper_apple_id}</span>
+              </div>
+            )}
             <button className="btn btn-secondary btn-small" onClick={() => { fetchStatus(); fetchLogs() }}>
               Refresh
             </button>
