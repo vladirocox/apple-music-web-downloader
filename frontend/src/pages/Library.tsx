@@ -185,7 +185,10 @@ export function LibraryPage({ showToast }: Props) {
   }
 
   const activeDlEntries = Object.entries(activeDownloads).filter(
-    ([, dl]) => dl.status !== 'completed' && dl.status !== 'failed'
+    ([, dl]) => dl.status === 'running' || dl.status === 'downloading' || dl.status === 'decrypting' || dl.status === 'starting'
+  )
+  const failedDlEntries = Object.entries(activeDownloads).filter(
+    ([, dl]) => dl.status === 'failed'
   )
 
   const totalTracks = albums.reduce((sum, a) => sum + a.track_count, 0)
@@ -307,6 +310,26 @@ export function LibraryPage({ showToast }: Props) {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Failed Downloads */}
+        {failedDlEntries.length > 0 && (
+          <div className="card" style={{ marginBottom: 16, borderLeft: '3px solid #ff3b30' }}>
+            <div className="card-title" style={{ color: '#ff3b30' }}>Failed Downloads</div>
+            {failedDlEntries.map(([id, dl]) => {
+              const errorLine = (dl.output || '').split('\n').find(l => l.toLowerCase().includes('error')) || 'Unknown error'
+              return (
+                <div key={id} style={{ padding: '8px 0', borderBottom: '1px solid var(--am-border)' }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
+                    {dl.url.split('/').pop() || dl.url}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#ff3b30' }}>
+                    {errorLine}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
 

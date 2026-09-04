@@ -74,13 +74,14 @@ export function SearchPage({ showToast }: Props) {
         body: JSON.stringify({ url, format: downloadFormat }),
       })
       const data = await res.json()
-      if (data.ok) {
+      if (res.ok && data.ok) {
         showToast(`Downloading: ${item.name}`)
       } else {
-        showToast('Download failed', 'error')
+        const msg = data.detail || data.message || 'Download failed'
+        showToast(msg, 'error')
       }
     } catch {
-      showToast('Download failed', 'error')
+      showToast('Download failed — is the server running?', 'error')
     } finally {
       setDownloading(null)
     }

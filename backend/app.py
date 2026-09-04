@@ -28,6 +28,7 @@ app.add_middleware(
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CLI_BIN = BASE_DIR / "bin" / "amd"
+CLI_CONFIG = BASE_DIR / "cli" / "config.yaml"
 WRAPPER_DIR = BASE_DIR / "wrapper"
 CONFIG_PATH = BASE_DIR / "config.yaml"
 DOWNLOAD_DIR = Path.home() / "Music" / "AppleMusic"
@@ -133,6 +134,36 @@ def is_wrapper_ready() -> bool:
         return r.stdout.decode().strip() == "200"
     except Exception:
         return False
+
+
+def sync_token_to_cli_config(music_token: str) -> bool:
+    """Write the wrapper's music_token into cli/config.yaml so the CLI can use it."""
+    if not music_token:
+        return False
+    try:
+        cli_cfg = {}
+        if CLI_CONFIG.exists():
+            with open(CLI_CONFIG) as f:
+                cli_cfg = yaml.safe_load(f) or {}
+        cli_cfg["media-user-token"] = music_token
+        with open(CLI_CONFIG, "w") as f:
+            yaml.dump(cli_cfg, f, default_flow_style=False, sort_keys=False)
+        return True
+    except Exception:
+        return False
+
+
+def get_wrapper_music_token() -> str:
+    """Fetch the music_token from the running wrapper on port 30020."""
+    try:
+        r = subprocess.run(
+            ["curl", "-s", "--connect-timeout", "3", "http://127.0.0.1:30020"],
+            capture_output=True, timeout=5,
+        )
+        data = json.loads(r.stdout.decode())
+        return data.get("music_token", "")
+    except Exception:
+        return ""
 
 
 async def get_apple_music_token() -> str:
@@ -382,6 +413,22 @@ async def search(req: SearchRequest):
 @app.post("/api/download")
 async def download_track(req: DownloadRequest):
     ensure_download_dir()
+
+    # Pre-flight checks
+    if not CLI_BIN.exists():
+        raise HTTPException(500, "CLI binary not found. Run ./setup.sh to install it.")
+    if not is_wrapper_running():
+        raise HTTPException(400, "Wrapper is not running. Go to Settings and start it with your Apple ID.")
+    if not is_wrapper_ready():
+        raise HTTPException(400, "Wrapper is starting up. Wait a few seconds and try again.")
+
+    # Fetch and sync the media-user-token from wrapper to CLI config
+    music_token = get_wrapper_music_token()
+    if not music_token:
+        raise HTTPException(400, "Wrapper is running but not authenticated yet. Wait for 2FA to complete or restart the Wrapper.")
+    if not sync_token_to_cli_config(music_token):
+        raise HTTPException(500, "Failed to sync token to CLI config.")
+
     cmd = [str(CLI_BIN), "--song"]
     if req.format == "aac":
         cmd.append("--aac")
@@ -409,7 +456,7 @@ async def download_track(req: DownloadRequest):
                     break
                 if not line:
                     break
-                text = line.decode().rstrip()
+                text = line.decode(errors="replace").rstrip()
                 ACTIVE_DOWNLOADS[download_id]["output"] += text + "\n"
                 tl = text.lower()
                 if "downloading" in tl:
@@ -418,6 +465,8 @@ async def download_track(req: DownloadRequest):
                     ACTIVE_DOWNLOADS[download_id]["status"] = "decrypting"
                 elif "completed" in tl or "saved" in tl or "decrypted" in tl:
                     ACTIVE_DOWNLOADS[download_id]["status"] = "completed"
+                elif "error" in tl or "failed" in tl:
+                    ACTIVE_DOWNLOADS[download_id]["status"] = "failed"
             await proc.wait()
             if ACTIVE_DOWNLOADS[download_id]["status"] not in ("completed", "failed"):
                 ACTIVE_DOWNLOADS[download_id]["status"] = (
