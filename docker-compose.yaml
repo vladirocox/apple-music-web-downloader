@@ -1,0 +1,21 @@
+services:
+  wrapper:
+    build:
+      context: ./wrapper
+      dockerfile: Dockerfile
+      args:
+        TARGET_ARCH: amd64
+        NDK_VERSION: 23
+    container_name: amd-wrapper
+    privileged: true
+    volumes:
+      - ./wrapper/rootfs/data:/app/rootfs/data
+    environment:
+      USERNAME: ${APPLE_ID:-}
+      PASSWORD: ${APPLE_PASS:-}
+    ports:
+      - "127.0.0.1:10020:10020"
+      - "127.0.0.1:20020:20020"
+      - "127.0.0.1:30020:30020"
+      - "127.0.0.1:40020:40020"
+    restart: unless-stopped

@@ -1,0 +1,19 @@
+services:
+  wrapper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TARGET_ARCH: amd64
+        NDK_VERSION: 23
+    volumes:
+      - ./rootfs/data:/app/rootfs/data
+    environment:
+      USERNAME: ${USERNAME}
+      PASSWORD: ${PASSWORD}
+    ports:
+      - "10020:10020"
+      - "20020:20020"
+      - "30020:30020"
+      - "40020:40020"
+    restart: unless-stopped
