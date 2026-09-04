@@ -137,7 +137,7 @@ def is_wrapper_ready() -> bool:
 
 
 def sync_token_to_cli_config(music_token: str) -> bool:
-    """Write the wrapper's music_token into cli/config.yaml so the CLI can use it."""
+    """Write the wrapper's music_token and save folders into cli/config.yaml."""
     if not music_token:
         return False
     try:
@@ -146,6 +146,13 @@ def sync_token_to_cli_config(music_token: str) -> bool:
             with open(CLI_CONFIG) as f:
                 cli_cfg = yaml.safe_load(f) or {}
         cli_cfg["media-user-token"] = music_token
+        # Sync save folders from project config to CLI config
+        project_cfg = load_config()
+        save_folder = project_cfg.get("alac-save-folder", str(DOWNLOAD_DIR))
+        cli_cfg["alac-save-folder"] = save_folder
+        cli_cfg["atmos-save-folder"] = save_folder
+        cli_cfg["aac-save-folder"] = save_folder
+        cli_cfg["mv-save-folder"] = save_folder
         with open(CLI_CONFIG, "w") as f:
             yaml.dump(cli_cfg, f, default_flow_style=False, sort_keys=False)
         return True
