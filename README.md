@@ -2,6 +2,11 @@
 
 A complete Apple Music ALAC (lossless) downloader with a beautiful web interface for searching, downloading, and managing your music library. Styled like Apple Music itself.
 
+<img width="3808" height="2232" alt="image" src="https://github.com/user-attachments/assets/06f8a633-f8f9-4f66-a5ab-1532daa263a0" />
+
+<img width="3808" height="2232" alt="image" src="https://github.com/user-attachments/assets/7a8cdfa7-5826-4857-a208-8876b5f81405" />
+
+
 > **⚠️ Important:** This tool downloads **ALAC audio only**. Music video downloads are **not supported** in this configuration.
 
 ## Features
