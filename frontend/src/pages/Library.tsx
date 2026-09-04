@@ -184,11 +184,28 @@ export function LibraryPage({ showToast }: Props) {
 
   return (
     <>
-      <div className="page-header">
-        <h1 className="page-title">Library</h1>
-        <p className="page-subtitle">
-          {albums.length} albums · {totalTracks} tracks · {formatSize(totalSize)}
-        </p>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1 className="page-title">Library</h1>
+          <p className="page-subtitle">
+            {albums.length} albums · {totalTracks} tracks · {formatSize(totalSize)}
+          </p>
+        </div>
+        {albums.length > 0 && (
+          <button
+            className="btn btn-primary btn-small"
+            onClick={() => {
+              albums.forEach((album, ai) => {
+                album.tracks.forEach((track, ti) => {
+                  setTimeout(() => downloadFile(track), (ai * album.tracks.length + ti) * 300)
+                })
+              })
+              showToast(`Downloading ${totalTracks} track${totalTracks !== 1 ? 's' : ''}`)
+            }}
+          >
+            ↓ Download All
+          </button>
+        )}
       </div>
       <div className="page-body">
         {/* Now Playing Bar */}
@@ -303,59 +320,37 @@ export function LibraryPage({ showToast }: Props) {
 
                 {expandedAlbum === `${album.artist}/${album.name}` && (
                   <div className="card" style={{ marginTop: 8 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderBottom: '1px solid var(--am-border)' }}>
-                      <span style={{ fontSize: 13, color: 'var(--am-text-secondary)' }}>
-                        {album.track_count} track{album.track_count !== 1 ? 's' : ''}
-                      </span>
-                      <button
-                        className="btn btn-secondary btn-small"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          album.tracks.forEach((t, i) => setTimeout(() => downloadFile(t), i * 300))
-                          showToast(`Downloading ${album.track_count} track${album.track_count !== 1 ? 's' : ''}`)
-                        }}
-                      >
-                        ↓ Download All
-                      </button>
-                    </div>
                     <div className="track-list">
                       {album.tracks.map((track, i) => (
-                        <div
-                          key={track.filename}
-                          className={`track-item ${activeTrack === track.path ? 'active' : ''}`}
-                        >
-                          <div className="track-number" onClick={() => playTrack(track)} style={{ cursor: 'pointer' }}>
-                            {activeTrack === track.path && playing ? '⏸' : i + 1}
+                        <div key={track.filename}>
+                          <div
+                            className={`track-item ${activeTrack === track.path ? 'active' : ''}`}
+                            onClick={() => playTrack(track)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="track-number">
+                              {activeTrack === track.path && playing ? '⏸' : i + 1}
+                            </div>
+                            <div className="track-title" style={{ flex: 1 }}>
+                              {track.name}
+                            </div>
+                            <div className="track-size">{formatSize(track.size)}</div>
                           </div>
-                          <div className="track-title" onClick={() => playTrack(track)} style={{ cursor: 'pointer', flex: 1 }}>
-                            {track.name}
-                          </div>
-                          <div className="track-size">{formatSize(track.size)}</div>
-                          <div className="track-actions">
-                            <button
-                              className="icon-btn"
-                              title="Play"
-                              onClick={(e) => { e.stopPropagation(); playTrack(track) }}
-                            >
-                              {activeTrack === track.path && playing ? '⏸' : '▶'}
-                            </button>
-                            <button
-                              className="icon-btn"
-                              title="Download file"
-                              onClick={(e) => { e.stopPropagation(); downloadFile(track) }}
-                            >
-                              ⬇
-                            </button>
-                            <button
-                              className="icon-btn"
-                              title="Delete from disk"
-                              onClick={(e) => { e.stopPropagation(); deleteFile(track) }}
-                              disabled={deleting === track.path}
-                              style={{ color: deleting === track.path ? 'var(--am-text-tertiary)' : '#ff3b30' }}
-                            >
-                              {deleting === track.path ? '...' : '🗑'}
-                            </button>
-                          </div>
+                          {activeTrack === track.path && (
+                            <div className="track-actions-bar">
+                              <button className="icon-btn-lg" title="Play" onClick={(e) => { e.stopPropagation(); playTrack(track) }}>
+                                {playing ? '⏸' : '▶'}
+                              </button>
+                              <button className="icon-btn-lg" title="Download file" onClick={(e) => { e.stopPropagation(); downloadFile(track) }}>
+                                ⬇ Download
+                              </button>
+                              <button className="icon-btn-lg" title="Delete" onClick={(e) => { e.stopPropagation(); deleteFile(track) }}
+                                disabled={deleting === track.path}
+                                style={{ color: deleting === track.path ? 'var(--am-text-tertiary)' : '#ff3b30' }}>
+                                {deleting === track.path ? '...' : '🗑 Delete'}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

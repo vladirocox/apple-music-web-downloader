@@ -146,6 +146,27 @@ body {
   margin-bottom: 24px;
 }
 
+.format-select {
+  background: var(--am-bg-tertiary);
+  border: 1px solid var(--am-border);
+  border-radius: var(--am-radius);
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--am-text);
+  outline: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.format-select:focus {
+  border-color: var(--am-red);
+}
+
+.format-select option {
+  background: var(--am-bg-secondary);
+  color: var(--am-text);
+}
+
 .search-input {
   flex: 1;
   background: var(--am-bg-tertiary);
@@ -319,8 +340,8 @@ body {
   display: flex;
   gap: 2px;
   flex-shrink: 0;
-  width: 90px;
   justify-content: flex-end;
+  gap: 4px;
 }
 
 .track-actions .icon-btn {
@@ -361,12 +382,31 @@ body {
   background: var(--am-bg-tertiary);
   color: var(--am-text);
 }
+
+.track-actions-bar {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  transition: color 0.15s;
+  gap: 16px;
+  padding: 8px 12px 10px 40px;
 }
 
-.icon-btn:hover {
+.icon-btn-lg {
+  background: none;
+  border: none;
+  color: var(--am-text-secondary);
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.icon-btn-lg:hover {
+  background: var(--am-bg-tertiary);
   color: var(--am-text);
 }
 

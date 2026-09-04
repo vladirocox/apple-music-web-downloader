@@ -45,6 +45,7 @@ export function SettingsPage({ showToast }: Props) {
   const [showTokenHelp, setShowTokenHelp] = useState(false)
   const [starting, setStarting] = useState(false)
   const [twoFACode, setTwoFACode] = useState('')
+  const [show2FA, setShow2FA] = useState(false)
   const [wrapperLogs, setWrapperLogs] = useState('')
   const [showLogs, setShowLogs] = useState(false)
   const statusPollRef = useRef<ReturnType<typeof setInterval> | null>(null)

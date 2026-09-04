@@ -19,6 +19,7 @@ export function SearchPage({ showToast }: Props) {
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [downloading, setDownloading] = useState<string | null>(null)
+  const [downloadFormat, setDownloadFormat] = useState('alac')
 
   const search = useCallback(async () => {
     if (!query.trim()) return
@@ -70,7 +71,7 @@ export function SearchPage({ showToast }: Props) {
       const res = await fetch('/api/download', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, format: downloadFormat }),
       })
       const data = await res.json()
       if (data.ok) {
@@ -105,6 +106,15 @@ export function SearchPage({ showToast }: Props) {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
           />
+          <select
+            className="format-select"
+            value={downloadFormat}
+            onChange={(e) => setDownloadFormat(e.target.value)}
+          >
+            <option value="alac">Lossless (ALAC)</option>
+            <option value="aac">AAC</option>
+            <option value="atmos">Dolby Atmos</option>
+          </select>
           <button className="btn btn-primary" onClick={search} disabled={loading}>
             {loading ? <span className="loading-spinner" /> : 'Search'}
           </button>

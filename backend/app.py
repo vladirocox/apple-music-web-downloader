@@ -74,6 +74,7 @@ class TokenModel(BaseModel):
 
 class DownloadRequest(BaseModel):
     url: str
+    format: str = "alac"  # alac, aac, atmos
 
 
 class SearchRequest(BaseModel):
@@ -107,7 +108,16 @@ def ensure_download_dir():
 
 
 def is_wrapper_running() -> bool:
-    return wrapper_process is not None and wrapper_process.poll() is None
+    if wrapper_process is not None and wrapper_process.poll() is None:
+        return True
+    try:
+        r = subprocess.run(
+            ["pgrep", "-f", "wrapper/wrapper.*-H"],
+            capture_output=True, timeout=3,
+        )
+        return r.returncode == 0
+    except Exception:
+        return False
 
 
 def is_wrapper_ready() -> bool:
@@ -369,7 +379,12 @@ async def search(req: SearchRequest):
 @app.post("/api/download")
 async def download_track(req: DownloadRequest):
     ensure_download_dir()
-    cmd = [str(CLI_BIN), "--song", req.url]
+    cmd = [str(CLI_BIN), "--song"]
+    if req.format == "aac":
+        cmd.append("--aac")
+    elif req.format == "atmos":
+        cmd.append("--atmos")
+    cmd.append(req.url)
     download_id = f"dl_{int(time.time())}"
     ACTIVE_DOWNLOADS[download_id] = {"url": req.url, "status": "starting", "output": ""}
 
