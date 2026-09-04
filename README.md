@@ -165,17 +165,12 @@ The Wrapper is a required component that handles FairPlay/Apple DRM decryption. 
 1. Go to Settings
 2. Enter Apple ID credentials
 3. Click "Start Wrapper"
-
-**Via Docker:**
-```bash
-cd wrapper
-docker compose up -d
-```
+4. If prompted, enter 2FA code
 
 **Manually:**
 ```bash
 cd wrapper
-./wrapper -L 'your@email.com:your_password'
+LD_LIBRARY_PATH=$(pwd)/rootfs/system/lib64 ./wrapper -L 'your@email.com:your_password'
 ```
 
 Keep the terminal open while using Wrapper. Closing it stops all decryption services.
@@ -220,11 +215,9 @@ apple-music-web/
 │   ├── main.go
 │   ├── go.mod
 │   └── utils/
-├── wrapper/              # Wrapper decryption engine
+├── wrapper/              # Wrapper decryption engine (runs natively)
 │   ├── wrapper           # Wrapper binary
-│   ├── rootfs/           # Android libraries (PRoot)
-│   ├── Dockerfile
-│   └── docker-compose.yaml
+│   └── rootfs/           # Android libraries (LD_LIBRARY_PATH)
 ├── backend/
 │   ├── app.py            # FastAPI application
 │   └── requirements.txt
