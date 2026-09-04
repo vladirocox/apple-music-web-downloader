@@ -220,9 +220,34 @@ async def get_status():
 @app.get("/api/config")
 async def get_config():
     cfg = load_config()
-    if "media-user-token" in cfg:
-        cfg["media_user_token"] = cfg.pop("media-user-token")
-    return cfg
+    # Convert kebab-case YAML keys to snake_case for frontend
+    key_map = {
+        "alac-save-folder": "alac_save_folder",
+        "media-user-token": "media_user_token",
+        "template-decrypt": "template_decrypt",
+        "key-server": "key_server",
+        "decrypt-m3u8-port": "decrypt_m3u8_port",
+        "get-m3u8-port": "get_m3u8_port",
+        "get-account-port": "get_account_port",
+        "get-m3u8-from-device": "get_m3u8_from_device",
+        "alac-max": "alac_max",
+        "cover-format": "cover_format",
+        "cover-size": "cover_size",
+        "embed-lrc": "embed_lrc",
+        "save-lrc": "save_lrc",
+        "embed-cover": "embed_cover",
+        "save-cover": "save_cover",
+        "album-folder-format": "album_folder_format",
+        "song-file-format": "song_file_format",
+        "auto-delete": "auto_delete",
+    }
+    out = {}
+    for yaml_key, py_key in key_map.items():
+        if yaml_key in cfg:
+            out[py_key] = cfg[yaml_key]
+    out["storefront"] = cfg.get("storefront", "us")
+    out["proxy"] = cfg.get("proxy", "")
+    return out
 
 
 @app.post("/api/config")
