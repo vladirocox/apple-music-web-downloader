@@ -111,7 +111,7 @@ export function LibraryPage({ showToast }: Props) {
     if (audioRef.current) {
       audioRef.current.pause()
     }
-    const audio = new Audio(`/api/stream?path=${encodeURIComponent(track.path)}`)
+    const audio = new Audio(`/api/library/track?path=${encodeURIComponent(track.path)}`)
     audio.volume = volume
     audioRef.current = audio
     setActiveTrack(track.path)

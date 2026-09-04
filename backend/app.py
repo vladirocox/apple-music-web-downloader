@@ -467,6 +467,14 @@ async def get_cover(path: str):
     return FileResponse(p, media_type=media_type)
 
 
+@app.get("/api/library/track")
+async def serve_track(path: str):
+    p = Path(path)
+    if not p.exists() or not p.resolve().is_relative_to(DOWNLOAD_DIR.resolve()):
+        raise HTTPException(404, "Track not found")
+    return FileResponse(p, media_type="audio/mp4", headers={"Accept-Ranges": "bytes"})
+
+
 @app.get("/api/stream")
 async def stream_track(request: Request, path: str):
     p = Path(path)
