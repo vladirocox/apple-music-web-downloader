@@ -596,6 +596,21 @@ async def delete_track(req: DeleteRequest):
         raise HTTPException(500, str(e))
 
 
+@app.post("/api/delete-all")
+async def delete_all_tracks():
+    if not DOWNLOAD_DIR.exists():
+        return {"ok": True, "message": "Nothing to delete"}
+    try:
+        count = 0
+        for artist_dir in DOWNLOAD_DIR.iterdir():
+            if artist_dir.is_dir():
+                shutil.rmtree(artist_dir)
+                count += 1
+        return {"ok": True, "message": f"Deleted {count} artist folders"}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
 FRONTEND_DIR = BASE_DIR / "frontend" / "dist"
 if FRONTEND_DIR.exists():
     app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")

@@ -160,6 +160,21 @@ export function LibraryPage({ showToast }: Props) {
     }
   }
 
+  const deleteAll = async () => {
+    if (!confirm('Delete ALL downloaded music? This cannot be undone.')) return
+    try {
+      const res = await fetch('/api/delete-all', { method: 'POST' })
+      if (res.ok) {
+        showToast('All music deleted')
+        fetchLibrary()
+      } else {
+        showToast('Delete failed', 'error')
+      }
+    } catch {
+      showToast('Delete failed', 'error')
+    }
+  }
+
   const activeDlEntries = Object.entries(activeDownloads).filter(
     ([, dl]) => dl.status !== 'completed' && dl.status !== 'failed'
   )
@@ -192,19 +207,27 @@ export function LibraryPage({ showToast }: Props) {
           </p>
         </div>
         {albums.length > 0 && (
-          <button
-            className="btn btn-primary btn-small"
-            onClick={() => {
-              albums.forEach((album, ai) => {
-                album.tracks.forEach((track, ti) => {
-                  setTimeout(() => downloadFile(track), (ai * album.tracks.length + ti) * 300)
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              className="btn btn-primary btn-small"
+              onClick={() => {
+                albums.forEach((album, ai) => {
+                  album.tracks.forEach((track, ti) => {
+                    setTimeout(() => downloadFile(track), (ai * album.tracks.length + ti) * 300)
+                  })
                 })
-              })
-              showToast(`Downloading ${totalTracks} track${totalTracks !== 1 ? 's' : ''}`)
-            }}
-          >
-            ↓ Download All
-          </button>
+                showToast(`Downloading ${totalTracks} track${totalTracks !== 1 ? 's' : ''}`)
+              }}
+            >
+              ↓ Download All
+            </button>
+            <button
+              className="btn btn-danger btn-small"
+              onClick={deleteAll}
+            >
+              🗑 Delete All
+            </button>
+          </div>
         )}
       </div>
       <div className="page-body">
