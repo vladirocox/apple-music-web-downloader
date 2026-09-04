@@ -497,13 +497,11 @@ async def download_track(req: DownloadRequest):
                     ACTIVE_DOWNLOADS[download_id]["status"] = "decrypting"
                 elif "completed" in tl or "saved" in tl or "decrypted" in tl:
                     ACTIVE_DOWNLOADS[download_id]["status"] = "completed"
-                elif "error" in tl or "failed" in tl:
-                    ACTIVE_DOWNLOADS[download_id]["status"] = "failed"
             await proc.wait()
-            if ACTIVE_DOWNLOADS[download_id]["status"] not in ("completed", "failed"):
-                ACTIVE_DOWNLOADS[download_id]["status"] = (
-                    "completed" if proc.returncode == 0 else "failed"
-                )
+            if proc.returncode == 0:
+                ACTIVE_DOWNLOADS[download_id]["status"] = "completed"
+            else:
+                ACTIVE_DOWNLOADS[download_id]["status"] = "failed"
         except Exception as e:
             ACTIVE_DOWNLOADS[download_id]["status"] = "failed"
             ACTIVE_DOWNLOADS[download_id]["output"] += f"\nError: {e}"
