@@ -77,9 +77,18 @@ export function LibraryPage({ showToast }: Props) {
   useEffect(() => {
     fetchLibrary()
     fetchDownloads()
-    const interval = setInterval(fetchDownloads, 2000)
-    return () => clearInterval(interval)
+    const dlInterval = setInterval(fetchDownloads, 2000)
+    return () => clearInterval(dlInterval)
   }, [])
+
+  useEffect(() => {
+    const hasActive = Object.values(activeDownloads).some(
+      dl => dl.status !== 'completed' && dl.status !== 'failed'
+    )
+    if (!hasActive) return
+    const libInterval = setInterval(fetchLibrary, 3000)
+    return () => clearInterval(libInterval)
+  }, [activeDownloads])
 
   useEffect(() => {
     const audio = audioRef.current
