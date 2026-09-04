@@ -303,6 +303,21 @@ export function LibraryPage({ showToast }: Props) {
 
                 {expandedAlbum === `${album.artist}/${album.name}` && (
                   <div className="card" style={{ marginTop: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderBottom: '1px solid var(--am-border)' }}>
+                      <span style={{ fontSize: 13, color: 'var(--am-text-secondary)' }}>
+                        {album.track_count} track{album.track_count !== 1 ? 's' : ''}
+                      </span>
+                      <button
+                        className="btn btn-secondary btn-small"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          album.tracks.forEach((t, i) => setTimeout(() => downloadFile(t), i * 300))
+                          showToast(`Downloading ${album.track_count} track${album.track_count !== 1 ? 's' : ''}`)
+                        }}
+                      >
+                        ↓ Download All
+                      </button>
+                    </div>
                     <div className="track-list">
                       {album.tracks.map((track, i) => (
                         <div
