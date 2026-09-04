@@ -22,15 +22,22 @@ echo "  ╚═══════════════════════
 echo -e "${NC}"
 
 # Rebuild CLI
-info "Rebuilding Go CLI..."
-cd cli
-go build -o ../bin/amd main.go
-cd "$SCRIPT_DIR"
-ok "CLI binary rebuilt"
+if [ -d "cli" ]; then
+  info "Rebuilding Go CLI..."
+  cd cli
+  go build -o ../bin/amd main.go
+  cd "$SCRIPT_DIR"
+  ok "CLI binary rebuilt"
+else
+  warn "cli/ directory not found. Run ./setup.sh first to clone the CLI."
+fi
 
 # Rebuild frontend
 info "Rebuilding frontend..."
 cd frontend
+if [ ! -d "node_modules" ]; then
+  npm install --silent 2>/dev/null
+fi
 npx vite build 2>/dev/null
 cd "$SCRIPT_DIR"
 ok "Frontend rebuilt"

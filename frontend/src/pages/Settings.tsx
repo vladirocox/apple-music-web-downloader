@@ -20,6 +20,7 @@ interface Config {
   album_folder_format: string
   song_file_format: string
   proxy: string
+  auto_delete: boolean
 }
 
 interface Status {
@@ -48,6 +49,7 @@ export function SettingsPage({ showToast }: Props) {
   const [show2FA, setShow2FA] = useState(false)
   const [wrapperLogs, setWrapperLogs] = useState('')
   const [showLogs, setShowLogs] = useState(false)
+  const [showFormatHelp, setShowFormatHelp] = useState(false)
   const statusPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const fetchStatus = async () => {
@@ -125,7 +127,7 @@ export function SettingsPage({ showToast }: Props) {
     try {
       await fetch('/api/auth/wrapper/stop', { method: 'POST' })
       showToast('Wrapper stopped')
-      setStatus(s => s ? { ...s, wrapper_running: false, wrapper_container: false, wrapper_port_open: false } : s)
+      fetchStatus()
     } catch {
       showToast('Failed to stop Wrapper', 'error')
     }
@@ -376,7 +378,55 @@ export function SettingsPage({ showToast }: Props) {
 
         {/* Download Settings */}
         <div className="card">
-          <div className="card-title">Download Settings</div>
+          <div className="card-title">
+            Download Settings
+            <button
+              className="btn btn-secondary btn-small"
+              style={{ marginLeft: 8 }}
+              onClick={() => setShowFormatHelp(!showFormatHelp)}
+            >
+              {showFormatHelp ? 'Hide' : 'Format Guide'}
+            </button>
+          </div>
+
+          {showFormatHelp && (
+            <div style={{
+              background: 'var(--am-bg-tertiary)', borderRadius: 8,
+              padding: 14, marginBottom: 16, fontSize: 13, lineHeight: 1.7,
+            }}>
+              <p style={{ fontWeight: 600, marginBottom: 8 }}>Audio Format Guide</p>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--am-border)' }}>
+                    <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--am-text-secondary)' }}>Format</th>
+                    <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--am-text-secondary)' }}>Quality</th>
+                    <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--am-text-secondary)' }}>Requirements</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid var(--am-border)' }}>
+                    <td style={{ padding: '6px 8px' }}>Lossless (ALAC)</td>
+                    <td style={{ padding: '6px 8px', color: 'var(--am-text-secondary)' }}>Up to 192kHz/24-bit</td>
+                    <td style={{ padding: '6px 8px', color: 'var(--am-text-secondary)' }}>Apple Music subscription</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid var(--am-border)' }}>
+                    <td style={{ padding: '6px 8px' }}>AAC</td>
+                    <td style={{ padding: '6px 8px', color: 'var(--am-text-secondary)' }}>Up to 320kbps</td>
+                    <td style={{ padding: '6px 8px', color: 'var(--am-text-secondary)' }}>Apple Music subscription</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '6px 8px' }}>Dolby Atmos</td>
+                    <td style={{ padding: '6px 8px', color: 'var(--am-text-secondary)' }}>Multi-channel spatial</td>
+                    <td style={{ padding: '6px 8px', color: 'var(--am-text-secondary)' }}>Apple Music + Atmos-capable track</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p style={{ marginTop: 10, fontSize: 12, color: 'var(--am-text-tertiary)' }}>
+                💡 Default is Lossless (ALAC) — best quality. Choose format in the Search page before downloading.
+              </p>
+            </div>
+          )}
+
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Download Folder</label>
@@ -401,6 +451,9 @@ export function SettingsPage({ showToast }: Props) {
                 <option value="au">Australia</option>
                 <option value="br">Brazil</option>
                 <option value="mx">Mexico</option>
+                <option value="kr">South Korea</option>
+                <option value="it">Italy</option>
+                <option value="es">Spain</option>
               </select>
             </div>
           </div>
@@ -418,6 +471,9 @@ export function SettingsPage({ showToast }: Props) {
               <option value={176400}>176,400 Hz</option>
               <option value={192000}>192,000 Hz (Hi-Res)</option>
             </select>
+            <div style={{ fontSize: 11, color: 'var(--am-text-tertiary)', marginTop: 4 }}>
+              Higher = better quality but larger files. 192,000 Hz is the maximum.
+            </div>
           </div>
           <div className="form-group">
             <label className="form-label">Album Folder Format</label>
@@ -489,6 +545,9 @@ export function SettingsPage({ showToast }: Props) {
               value={config.proxy}
               onChange={e => setConfig({ ...config, proxy: e.target.value })}
             />
+            <div style={{ fontSize: 11, color: 'var(--am-text-tertiary)', marginTop: 4 }}>
+              SOCKS5 or HTTP proxy. Leave empty for direct connection.
+            </div>
           </div>
         </div>
 

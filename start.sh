@@ -13,14 +13,12 @@ err()   { echo -e "${RED}[ERROR]${NC} $*"; }
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-WRAPPER_PID=""
 BACKEND_PID=""
 
 cleanup() {
   echo ""
   info "Shutting down..."
   [ -n "$BACKEND_PID" ] && kill "$BACKEND_PID" 2>/dev/null
-  [ -n "$WRAPPER_PID" ] && kill "$WRAPPER_PID" 2>/dev/null
   ok "All services stopped"
   exit 0
 }
@@ -35,6 +33,21 @@ fi
 
 if [ ! -d "venv" ]; then
   err "Python venv not found. Run ./setup.sh first."
+  exit 1
+fi
+
+if [ ! -f "wrapper/wrapper" ]; then
+  err "Wrapper binary not found. Run ./setup.sh first."
+  exit 1
+fi
+
+if [ ! -d "wrapper/rootfs" ]; then
+  err "Wrapper rootfs not found. Run ./setup.sh first."
+  exit 1
+fi
+
+if [ ! -d "frontend/dist" ]; then
+  err "Frontend not built. Run ./setup.sh first."
   exit 1
 fi
 
