@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { SearchPage } from './pages/Search'
 import { LibraryPage } from './pages/Library'
 import { SettingsPage } from './pages/Settings'
-import { DownloadsPage } from './pages/Downloads'
 
-type Page = 'search' | 'library' | 'downloads' | 'settings'
+type Page = 'search' | 'library' | 'settings'
 
 export default function App() {
   const [page, setPage] = useState<Page>('search')
@@ -17,7 +16,7 @@ export default function App() {
 
   useEffect(() => {
     const saved = localStorage.getItem('am_page') as Page | null
-    if (saved && ['search', 'library', 'downloads', 'settings'].includes(saved)) {
+    if (saved && ['search', 'library', 'settings'].includes(saved)) {
       setPage(saved)
     }
   }, [])
@@ -30,7 +29,6 @@ export default function App() {
   const links: { id: Page; label: string; icon: string }[] = [
     { id: 'search', label: 'Search', icon: '🔍' },
     { id: 'library', label: 'Library', icon: '🎵' },
-    { id: 'downloads', label: 'Downloads', icon: '📥' },
     { id: 'settings', label: 'Settings', icon: '⚙️' },
   ]
 
@@ -62,7 +60,6 @@ export default function App() {
       <main className="main-content">
         {page === 'search' && <SearchPage showToast={showToast} />}
         {page === 'library' && <LibraryPage showToast={showToast} />}
-        {page === 'downloads' && <DownloadsPage showToast={showToast} />}
         {page === 'settings' && <SettingsPage showToast={showToast} />}
       </main>
 

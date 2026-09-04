@@ -1,22 +1,18 @@
 import asyncio
-import fcntl
 import json
 import os
-import pty
 import re
-import signal
-import struct
+import shutil
 import subprocess
-import termios
 import time
 from pathlib import Path
 from typing import Optional
 
 import httpx
 import yaml
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -64,6 +60,7 @@ class ConfigModel(BaseModel):
     album_folder_format: str = "{AlbumName}"
     song_file_format: str = "{SongNumer}. {SongName}"
     proxy: str = ""
+    auto_delete: bool = False
 
 
 class AuthModel(BaseModel):
@@ -87,6 +84,10 @@ class SearchRequest(BaseModel):
 
 class TwoFAModel(BaseModel):
     code: str
+
+
+class DeleteRequest(BaseModel):
+    path: str
 
 
 def load_config() -> dict:
@@ -201,6 +202,7 @@ async def update_config(config: ConfigModel):
         out[yaml_key] = cfg[py_key]
     out["proxy"] = cfg["proxy"]
     out["storefront"] = cfg["storefront"]
+    out["auto-delete"] = cfg["auto_delete"]
     save_config(out)
     return {"ok": True}
 
@@ -329,7 +331,7 @@ async def search(req: SearchRequest):
             search_type = search_type.strip().lower()
             if search_type not in ("songs", "albums", "artists"):
                 continue
-            api_type = search_type  # API expects plural: songs, albums, artists
+            api_type = search_type
             try:
                 resp = await client.get(
                     f"https://amp-api.music.apple.com/v1/catalog/{storefront}/search",
@@ -343,7 +345,6 @@ async def search(req: SearchRequest):
                 if resp.status_code == 200:
                     data = resp.json()
                     results_block = data.get("results", {})
-                    # API returns results keyed by plural type: "songs", "albums", "artists"
                     for rkey in (search_type,):
                         if rkey in results_block:
                             for item in results_block[rkey].get("data", []):
@@ -466,32 +467,103 @@ async def get_cover(path: str):
     return FileResponse(p, media_type=media_type)
 
 
-@app.get("/api/library/track")
-async def serve_track(path: str):
+@app.get("/api/stream")
+async def stream_track(request: Request, path: str):
     p = Path(path)
-    if not p.exists() or not p.parent.parent.is_relative_to(DOWNLOAD_DIR):
+    if not p.exists() or not p.parent.parent.parent.is_relative_to(DOWNLOAD_DIR):
         raise HTTPException(404, "Track not found")
-    return FileResponse(p, media_type="audio/mp4")
 
+    file_size = p.stat().st_size
+    content_type = "audio/mp4"
+    if p.suffix == ".flac":
+        content_type = "audio/flac"
+    elif p.suffix == ".mp3":
+        content_type = "audio/mpeg"
 
-@app.websocket("/ws/download")
-async def download_ws(websocket: WebSocket):
-    await websocket.accept()
-    try:
-        while True:
-            data = await websocket.receive_text()
-            msg = json.loads(data)
-            if msg.get("type") == "subscribe":
-                dl_id = msg.get("download_id")
-                while True:
-                    if dl_id in ACTIVE_DOWNLOADS:
-                        info = ACTIVE_DOWNLOADS[dl_id]
-                        await websocket.send_json(info)
-                        if info["status"] in ("completed", "failed"):
+    range_header = request.headers.get("range")
+    if range_header:
+        range_match = re.match(r"bytes=(\d+)-(\d*)", range_header)
+        if range_match:
+            start = int(range_match.group(1))
+            end = int(range_match.group(2)) if range_match.group(2) else file_size - 1
+            end = min(end, file_size - 1)
+            chunk_size = end - start + 1
+
+            def iter_file():
+                with open(p, "rb") as f:
+                    f.seek(start)
+                    remaining = chunk_size
+                    while remaining > 0:
+                        read_size = min(remaining, 1024 * 1024)
+                        data = f.read(read_size)
+                        if not data:
                             break
-                    await asyncio.sleep(1)
-    except WebSocketDisconnect:
-        pass
+                        remaining -= len(data)
+                        yield data
+
+            return StreamingResponse(
+                iter_file(),
+                status_code=206,
+                media_type=content_type,
+                headers={
+                    "Content-Range": f"bytes {start}-{end}/{file_size}",
+                    "Accept-Ranges": "bytes",
+                    "Content-Length": str(chunk_size),
+                },
+            )
+
+    def iter_file():
+        with open(p, "rb") as f:
+            while True:
+                data = f.read(1024 * 1024)
+                if not data:
+                    break
+                yield data
+
+    return StreamingResponse(
+        iter_file(),
+        media_type=content_type,
+        headers={
+            "Accept-Ranges": "bytes",
+            "Content-Length": str(file_size),
+        },
+    )
+
+
+@app.get("/api/download-file")
+async def download_file(path: str):
+    p = Path(path)
+    if not p.exists() or not p.parent.parent.parent.is_relative_to(DOWNLOAD_DIR):
+        raise HTTPException(404, "File not found")
+    return FileResponse(
+        p,
+        media_type="application/octet-stream",
+        filename=p.name,
+    )
+
+
+@app.post("/api/delete")
+async def delete_track(req: DeleteRequest):
+    p = Path(req.path)
+    if not p.exists():
+        raise HTTPException(404, "File not found")
+    if not p.resolve().is_relative_to(DOWNLOAD_DIR.resolve()):
+        raise HTTPException(403, "Cannot delete outside download directory")
+
+    try:
+        if p.is_file():
+            p.unlink()
+            album_dir = p.parent
+            if not any(album_dir.iterdir()):
+                album_dir.rmdir()
+                artist_dir = album_dir.parent
+                if not any(artist_dir.iterdir()):
+                    artist_dir.rmdir()
+        elif p.is_dir():
+            shutil.rmtree(p)
+        return {"ok": True, "message": "Deleted"}
+    except Exception as e:
+        raise HTTPException(500, str(e))
 
 
 FRONTEND_DIR = BASE_DIR / "frontend" / "dist"
