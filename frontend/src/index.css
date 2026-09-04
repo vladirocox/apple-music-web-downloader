@@ -699,3 +699,278 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--am-text-tertiary);
 }
+
+/* ── Mobile Header ─────────────────────────────────────────────────────────── */
+
+.mobile-header {
+  display: none;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+.mobile-nav {
+  display: none;
+}
+
+/* ── Mobile Responsive ─────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 0px;
+  }
+
+  body {
+    overflow: auto;
+    height: auto;
+  }
+
+  .app-layout {
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* Top bar */
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--am-bg-secondary);
+    border-bottom: 1px solid var(--am-border);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .mobile-header-title {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .hamburger {
+    background: none;
+    border: none;
+    color: var(--am-text);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.15s;
+  }
+
+  .hamburger:hover {
+    background: var(--am-surface-hover);
+  }
+
+  /* Sidebar slides in from left */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 260px;
+    z-index: 60;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: none;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 55;
+  }
+
+  /* Bottom nav */
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--am-bg-secondary);
+    border-top: 1px solid var(--am-border);
+    z-index: 50;
+    padding: 6px 0;
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+  }
+
+  .mobile-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 0;
+    cursor: pointer;
+    color: var(--am-text-secondary);
+    transition: color 0.15s;
+  }
+
+  .mobile-nav-item.active {
+    color: var(--am-red);
+  }
+
+  .mobile-nav-icon {
+    font-size: 20px;
+  }
+
+  .mobile-nav-label {
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  /* Main content */
+  .main-content {
+    flex: 1;
+    padding-bottom: 70px;
+    overflow-y: auto;
+  }
+
+  .page-header {
+    padding: 16px 16px 12px;
+    position: sticky;
+    top: 53px;
+  }
+
+  .page-body {
+    padding: 16px;
+  }
+
+  .page-title {
+    font-size: 24px;
+  }
+
+  /* Search bar stacks vertically */
+  .search-bar {
+    flex-direction: column;
+  }
+
+  .search-bar .format-select {
+    width: 100%;
+  }
+
+  .search-bar .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Album grid: 2 columns */
+  .album-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  /* Result cards */
+  .result-card {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .result-cover {
+    width: 48px;
+    height: 48px;
+  }
+
+  .result-name {
+    font-size: 14px;
+  }
+
+  .result-detail {
+    font-size: 12px;
+  }
+
+  /* Track items */
+  .track-item {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .track-actions-bar {
+    padding: 6px 10px 8px 36px;
+    gap: 10px;
+  }
+
+  .icon-btn-lg {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  /* Cards */
+  .card {
+    padding: 16px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+  }
+
+  .card-title {
+    font-size: 15px;
+  }
+
+  /* Form elements */
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-input {
+    font-size: 16px; /* prevents iOS zoom */
+  }
+
+  .search-input {
+    font-size: 16px;
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .btn-small {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  /* Toggle */
+  .toggle {
+    padding: 12px 0;
+  }
+
+  .toggle-label {
+    font-size: 13px;
+  }
+
+  /* Library header buttons */
+  .page-header > div:last-child {
+    flex-wrap: wrap;
+  }
+
+  /* Now Playing bar */
+  .track-list {
+    gap: 0;
+  }
+
+  /* Toast moves up for mobile nav */
+  .toast {
+    bottom: 80px;
+    left: 16px;
+    right: 16px;
+    text-align: center;
+  }
+
+  /* Status badges */
+  .status-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+}

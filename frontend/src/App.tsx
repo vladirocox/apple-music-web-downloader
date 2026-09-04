@@ -8,6 +8,7 @@ type Page = 'search' | 'library' | 'settings'
 export default function App() {
   const [page, setPage] = useState<Page>('search')
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const showToast = useCallback((msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type })
@@ -24,6 +25,7 @@ export default function App() {
   const navigate = (p: Page) => {
     setPage(p)
     localStorage.setItem('am_page', p)
+    setSidebarOpen(false)
   }
 
   const links: { id: Page; label: string; icon: string }[] = [
@@ -34,7 +36,17 @@ export default function App() {
 
   return (
     <div className="app-layout">
-      <aside className="sidebar">
+      {/* Mobile top bar */}
+      <div className="mobile-header">
+        <button className="hamburger" onClick={() => setSidebarOpen(!sidebarOpen)}>
+          {sidebarOpen ? '✕' : '☰'}
+        </button>
+        <div className="mobile-header-title">Apple Music</div>
+        <div style={{ width: 32 }} />
+      </div>
+
+      {/* Sidebar */}
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">Apple Music</div>
         <nav className="sidebar-nav">
           {links.map((l) => (
@@ -50,11 +62,28 @@ export default function App() {
         </nav>
       </aside>
 
+      {/* Overlay when sidebar open on mobile */}
+      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+
       <main className="main-content">
         {page === 'search' && <SearchPage showToast={showToast} />}
         {page === 'library' && <LibraryPage showToast={showToast} />}
         {page === 'settings' && <SettingsPage showToast={showToast} />}
       </main>
+
+      {/* Mobile bottom nav */}
+      <nav className="mobile-nav">
+        {links.map((l) => (
+          <div
+            key={l.id}
+            className={`mobile-nav-item ${page === l.id ? 'active' : ''}`}
+            onClick={() => navigate(l.id)}
+          >
+            <span className="mobile-nav-icon">{l.icon}</span>
+            <span className="mobile-nav-label">{l.label}</span>
+          </div>
+        ))}
+      </nav>
 
       {toast && (
         <div className={`toast ${toast.type}`}>
