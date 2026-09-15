@@ -137,7 +137,7 @@ def is_wrapper_ready() -> bool:
 
 
 def sync_token_to_cli_config(music_token: str) -> bool:
-    """Write the wrapper's music_token and save folders into cli/config.yaml."""
+    """Write the wrapper's music_token and all relevant settings into cli/config.yaml."""
     if not music_token:
         return False
     try:
@@ -146,13 +146,27 @@ def sync_token_to_cli_config(music_token: str) -> bool:
             with open(CLI_CONFIG) as f:
                 cli_cfg = yaml.safe_load(f) or {}
         cli_cfg["media-user-token"] = music_token
-        # Sync save folders from project config to CLI config
+        # Sync all relevant settings from project config to CLI config
         project_cfg = load_config()
         save_folder = project_cfg.get("alac-save-folder", str(DOWNLOAD_DIR))
-        cli_cfg["alac-save-folder"] = save_folder
-        cli_cfg["atmos-save-folder"] = save_folder
-        cli_cfg["aac-save-folder"] = save_folder
-        cli_cfg["mv-save-folder"] = save_folder
+        field_map = {
+            "alac-save-folder": save_folder,
+            "atmos-save-folder": save_folder,
+            "aac-save-folder": save_folder,
+            "mv-save-folder": save_folder,
+            "storefront": project_cfg.get("storefront", "us"),
+            "alac-max": project_cfg.get("alac-max", 192000),
+            "album-folder-format": project_cfg.get("album-folder-format", "{AlbumName}"),
+            "song-file-format": project_cfg.get("song-file-format", "{SongNumer}. {SongName}"),
+            "embed-cover": project_cfg.get("embed-cover", True),
+            "cover-format": project_cfg.get("cover-format", "png"),
+            "cover-size": project_cfg.get("cover-size", 1200),
+            "template-decrypt": project_cfg.get("template-decrypt", True),
+            "proxy": project_cfg.get("proxy", ""),
+            "alac-fix": project_cfg.get("alac-fix", False),
+        }
+        for key, value in field_map.items():
+            cli_cfg[key] = value
         with open(CLI_CONFIG, "w") as f:
             yaml.dump(cli_cfg, f, default_flow_style=False, sort_keys=False)
         return True
@@ -474,6 +488,7 @@ async def download_track(req: DownloadRequest):
         try:
             ld_path = str(WRAPPER_DIR / "rootfs" / "system" / "lib64")
             env = {**os.environ, "LD_LIBRARY_PATH": ld_path}
+            dl_start = time.time()
             proc = await asyncio.create_subprocess_exec(
                 *cmd, stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT, cwd=str(BASE_DIR / "cli"),
@@ -497,30 +512,21 @@ async def download_track(req: DownloadRequest):
                     ACTIVE_DOWNLOADS[download_id]["status"] = "decrypting"
                 elif "completed" in tl or "saved" in tl or "decrypted" in tl:
                     ACTIVE_DOWNLOADS[download_id]["status"] = "completed"
-                # Parse CLI summary line: [✔] Completed: X/Y | ... | [✖] Errors: Z
-                if "completed:" in tl and "errors:" in tl:
-                    import re
-                    m = re.search(r'completed:\s*(\d+)/(\d+).*errors:\s*(\d+)', text, re.IGNORECASE)
-                    if m:
-                        ok_count, total_count, err_count = int(m.group(1)), int(m.group(2)), int(m.group(3))
-                        if ok_count > 0 and err_count == 0:
-                            ACTIVE_DOWNLOADS[download_id]["status"] = "completed"
-                        else:
-                            ACTIVE_DOWNLOADS[download_id]["status"] = "failed"
             await proc.wait()
-            # Final check: if status still "running", decide based on output
-            if ACTIVE_DOWNLOADS[download_id]["status"] not in ("completed", "failed"):
-                output = ACTIVE_DOWNLOADS[download_id].get("output", "")
-                if "completed:" in output.lower() and "errors:" in output.lower():
-                    import re
-                    m = re.search(r'completed:\s*(\d+)/(\d+).*errors:\s*(\d+)', output, re.IGNORECASE)
-                    if m:
-                        ok_count, total_count, err_count = int(m.group(1)), int(m.group(2)), int(m.group(3))
-                        ACTIVE_DOWNLOADS[download_id]["status"] = "completed" if ok_count > 0 and err_count == 0 else "failed"
-                    else:
-                        ACTIVE_DOWNLOADS[download_id]["status"] = "completed" if proc.returncode == 0 else "failed"
-                else:
-                    ACTIVE_DOWNLOADS[download_id]["status"] = "completed" if proc.returncode == 0 else "failed"
+            # Check if any m4a files were created/modified since download started — MP4Box errors are non-fatal
+            dl_end = time.time()
+            has_file = False
+            for f in DOWNLOAD_DIR.rglob("*.m4a"):
+                try:
+                    if f.stat().st_mtime >= dl_start - 2:
+                        has_file = True
+                        break
+                except OSError:
+                    continue
+            if has_file:
+                ACTIVE_DOWNLOADS[download_id]["status"] = "completed"
+            elif ACTIVE_DOWNLOADS[download_id]["status"] not in ("completed", "failed"):
+                ACTIVE_DOWNLOADS[download_id]["status"] = "completed" if proc.returncode == 0 else "failed"
         except Exception as e:
             ACTIVE_DOWNLOADS[download_id]["status"] = "failed"
             ACTIVE_DOWNLOADS[download_id]["output"] += f"\nError: {e}"
