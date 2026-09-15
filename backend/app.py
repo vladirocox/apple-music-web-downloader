@@ -497,11 +497,30 @@ async def download_track(req: DownloadRequest):
                     ACTIVE_DOWNLOADS[download_id]["status"] = "decrypting"
                 elif "completed" in tl or "saved" in tl or "decrypted" in tl:
                     ACTIVE_DOWNLOADS[download_id]["status"] = "completed"
+                # Parse CLI summary line: [✔] Completed: X/Y | ... | [✖] Errors: Z
+                if "completed:" in tl and "errors:" in tl:
+                    import re
+                    m = re.search(r'completed:\s*(\d+)/(\d+).*errors:\s*(\d+)', text, re.IGNORECASE)
+                    if m:
+                        ok_count, total_count, err_count = int(m.group(1)), int(m.group(2)), int(m.group(3))
+                        if ok_count > 0 and err_count == 0:
+                            ACTIVE_DOWNLOADS[download_id]["status"] = "completed"
+                        else:
+                            ACTIVE_DOWNLOADS[download_id]["status"] = "failed"
             await proc.wait()
-            if proc.returncode == 0:
-                ACTIVE_DOWNLOADS[download_id]["status"] = "completed"
-            else:
-                ACTIVE_DOWNLOADS[download_id]["status"] = "failed"
+            # Final check: if status still "running", decide based on output
+            if ACTIVE_DOWNLOADS[download_id]["status"] not in ("completed", "failed"):
+                output = ACTIVE_DOWNLOADS[download_id].get("output", "")
+                if "completed:" in output.lower() and "errors:" in output.lower():
+                    import re
+                    m = re.search(r'completed:\s*(\d+)/(\d+).*errors:\s*(\d+)', output, re.IGNORECASE)
+                    if m:
+                        ok_count, total_count, err_count = int(m.group(1)), int(m.group(2)), int(m.group(3))
+                        ACTIVE_DOWNLOADS[download_id]["status"] = "completed" if ok_count > 0 and err_count == 0 else "failed"
+                    else:
+                        ACTIVE_DOWNLOADS[download_id]["status"] = "completed" if proc.returncode == 0 else "failed"
+                else:
+                    ACTIVE_DOWNLOADS[download_id]["status"] = "completed" if proc.returncode == 0 else "failed"
         except Exception as e:
             ACTIVE_DOWNLOADS[download_id]["status"] = "failed"
             ACTIVE_DOWNLOADS[download_id]["output"] += f"\nError: {e}"
@@ -513,6 +532,22 @@ async def download_track(req: DownloadRequest):
 @app.get("/api/downloads")
 async def list_downloads():
     return {"downloads": ACTIVE_DOWNLOADS}
+
+
+@app.delete("/api/downloads/failed")
+async def clear_failed_downloads():
+    to_remove = [k for k, v in ACTIVE_DOWNLOADS.items() if v.get("status") == "failed"]
+    for k in to_remove:
+        del ACTIVE_DOWNLOADS[k]
+    return {"ok": True, "cleared": len(to_remove)}
+
+
+@app.delete("/api/downloads/{download_id}")
+async def clear_download(download_id: str):
+    if download_id in ACTIVE_DOWNLOADS:
+        del ACTIVE_DOWNLOADS[download_id]
+        return {"ok": True}
+    raise HTTPException(404, "Download not found")
 
 
 @app.get("/api/library")

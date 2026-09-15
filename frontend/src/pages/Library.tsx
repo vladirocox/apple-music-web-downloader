@@ -184,6 +184,16 @@ export function LibraryPage({ showToast }: Props) {
     }
   }
 
+  const clearFailed = async () => {
+    try {
+      const res = await fetch('/api/downloads/failed', { method: 'DELETE' })
+      if (res.ok) {
+        showToast('Cleared failed downloads')
+        fetchDownloads()
+      }
+    } catch {}
+  }
+
   const activeDlEntries = Object.entries(activeDownloads).filter(
     ([, dl]) => dl.status === 'running' || dl.status === 'downloading' || dl.status === 'decrypting' || dl.status === 'starting'
   )
@@ -316,13 +326,20 @@ export function LibraryPage({ showToast }: Props) {
         {/* Failed Downloads */}
         {failedDlEntries.length > 0 && (
           <div className="card" style={{ marginBottom: 16, borderLeft: '3px solid #ff3b30' }}>
-            <div className="card-title" style={{ color: '#ff3b30' }}>Failed Downloads</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div className="card-title" style={{ color: '#ff3b30' }}>Failed Downloads</div>
+              <button className="btn btn-secondary" style={{ fontSize: 12, padding: '4px 12px' }} onClick={clearFailed}>
+                Clear All
+              </button>
+            </div>
             {failedDlEntries.map(([id, dl]) => {
-              const errorLine = (dl.output || '').split('\n').find(l => l.toLowerCase().includes('error')) || 'Unknown error'
+              const lines = (dl.output || '').split('\n').filter(l => l.trim())
+              const errorLine = lines.find(l => l.toLowerCase().includes('error') || l.toLowerCase().includes('failed') || l.toLowerCase().includes('separator')) || lines[lines.length - 2] || 'Unknown error'
+              const trackInfo = dl.url.split('/').pop() || dl.url
               return (
                 <div key={id} style={{ padding: '8px 0', borderBottom: '1px solid var(--am-border)' }}>
                   <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
-                    {dl.url.split('/').pop() || dl.url}
+                    {trackInfo}
                   </div>
                   <div style={{ fontSize: 12, color: '#ff3b30' }}>
                     {errorLine}
