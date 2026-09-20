@@ -19,6 +19,7 @@ interface Album {
 
 interface Download {
   url: string
+  name?: string
   status: string
   output: string
   pid?: number
@@ -314,7 +315,7 @@ export function LibraryPage({ showToast }: Props) {
               <div key={id} style={{ padding: '8px 0', borderBottom: '1px solid var(--am-border)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 13, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {dl.url.split('/').pop() || dl.url}
+                    {dl.name || dl.url.split('/').pop() || dl.url}
                   </span>
                   <span className={`status-badge ${dl.status}`} style={{ marginLeft: 8 }}>{dl.status}</span>
                 </div>
@@ -335,7 +336,7 @@ export function LibraryPage({ showToast }: Props) {
             {failedDlEntries.map(([id, dl]) => {
               const lines = (dl.output || '').split('\n').filter(l => l.trim())
               const errorLine = lines.find(l => l.toLowerCase().includes('error') || l.toLowerCase().includes('failed') || l.toLowerCase().includes('separator')) || lines[lines.length - 2] || 'Unknown error'
-              const trackInfo = dl.url.split('/').pop() || dl.url
+              const trackInfo = dl.name || dl.url.split('/').pop() || dl.url
               return (
                 <div key={id} style={{ padding: '8px 0', borderBottom: '1px solid var(--am-border)' }}>
                   <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>

@@ -482,7 +482,7 @@ async def download_track(req: DownloadRequest):
         cmd.append("--atmos")
     cmd.append(req.url)
     download_id = f"dl_{int(time.time())}"
-    ACTIVE_DOWNLOADS[download_id] = {"url": req.url, "status": "starting", "output": ""}
+    ACTIVE_DOWNLOADS[download_id] = {"url": req.url, "name": "", "status": "starting", "output": ""}
 
     async def run_download():
         try:
@@ -512,6 +512,18 @@ async def download_track(req: DownloadRequest):
                     ACTIVE_DOWNLOADS[download_id]["status"] = "decrypting"
                 elif "completed" in tl or "saved" in tl or "decrypted" in tl:
                     ACTIVE_DOWNLOADS[download_id]["status"] = "completed"
+                # Extract track name from CLI output lines like "Track 1 of 20: songs" or "Headlines - Drake (16B-44.1kHz)"
+                if not ACTIVE_DOWNLOADS[download_id]["name"]:
+                    stripped = text.strip()
+                    # Match "Track N of M: ..." then next line is the name
+                    if tl.startswith("track ") and ":" in stripped:
+                        ACTIVE_DOWNLOADS[download_id]["_expect_name"] = True
+                    elif ACTIVE_DOWNLOADS[download_id].get("_expect_name") and stripped and not tl.startswith("queue") and not tl.startswith("track"):
+                        ACTIVE_DOWNLOADS[download_id]["name"] = stripped
+                        ACTIVE_DOWNLOADS[download_id].pop("_expect_name", None)
+                    # Direct name pattern: "Name - Artist (Quality)"
+                    elif re.match(r'^.+\s-\s.+\s\(', stripped):
+                        ACTIVE_DOWNLOADS[download_id]["name"] = stripped
             await proc.wait()
             # Check if any m4a files were created/modified since download started — MP4Box errors are non-fatal
             dl_end = time.time()
