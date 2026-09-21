@@ -486,8 +486,7 @@ async def download_track(req: DownloadRequest):
 
     async def run_download():
         try:
-            ld_path = str(WRAPPER_DIR / "rootfs" / "system" / "lib64")
-            env = {**os.environ, "LD_LIBRARY_PATH": ld_path}
+            env = {**os.environ}
             dl_start = time.time()
             proc = await asyncio.create_subprocess_exec(
                 *cmd, stdout=asyncio.subprocess.PIPE,
@@ -525,16 +524,21 @@ async def download_track(req: DownloadRequest):
                     elif re.match(r'^.+\s-\s.+\s\(', stripped):
                         ACTIVE_DOWNLOADS[download_id]["name"] = stripped
             await proc.wait()
-            # Check if any m4a files were created/modified since download started — MP4Box errors are non-fatal
-            dl_end = time.time()
+            # Check if any m4a files exist that were created/modified during this download
+            # MP4Box errors (Separator, Failed to write cover) are non-fatal — file is still on disk
             has_file = False
-            for f in DOWNLOAD_DIR.rglob("*.m4a"):
-                try:
-                    if f.stat().st_mtime >= dl_start - 2:
-                        has_file = True
-                        break
-                except OSError:
-                    continue
+            try:
+                now = time.time()
+                for f in DOWNLOAD_DIR.rglob("*.m4a"):
+                    try:
+                        st = f.stat()
+                        if st.st_size > 0 and st.st_mtime >= dl_start - 5:
+                            has_file = True
+                            break
+                    except (OSError, ValueError):
+                        continue
+            except Exception:
+                pass
             if has_file:
                 ACTIVE_DOWNLOADS[download_id]["status"] = "completed"
             elif ACTIVE_DOWNLOADS[download_id]["status"] not in ("completed", "failed"):
